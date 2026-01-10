@@ -8,6 +8,7 @@ from colorama import init
 
 from .api import *
 from .gpxcompiler import *
+from .imagedownload import *
 from .utils import *
 
 import argparse
@@ -179,6 +180,53 @@ def make_gpx(tour_id, api, output_dir, no_poi, skip_existing, tour_base, add_dat
 
     print_success(f"GPX file written to '{path}'")
 
+def download_tour_images(tour_id, api, output_dir, skip_existing, tour_base, add_date, max_title_length):
+    image_dir_contents = set()
+    images = api.fetch_tour_images(str(tour_id), silent=False)
+
+    if len(images) > 0:
+        date_str = tour_base['date'][:10]+'_' if add_date else ''
+
+        directoryname = sanitize_filename(tour_base['name'])
+        if max_title_length == 0:
+            directoryname = f"{tour_id}"
+        elif max_title_length > 0 and len(directoryname) > max_title_length:
+            directoryname = f"{directoryname[:max_title_length]}-{tour_id}"
+        else:
+            directoryname = f"{directoryname}-{tour_id}"
+
+        fullname = f"{date_str}{directoryname}_images"
+        image_dir = f"{output_dir}/{fullname}"
+
+        imagepat = re.compile(r"\.jpg$")
+        if not os.path.exists(image_dir):
+            os.makedirs(image_dir)
+        for f in os.listdir(image_dir):
+            if not os.path.isfile(f) or not imagepat.match(f):
+                next
+            image_dir_contents.add(f)
+
+    for x in images:
+        dt = datetime.strptime(images[x]['created_at'], "%Y-%m-%dT%H:%M:%S.%fZ")
+        output_date = dt.strftime("%Y%m%d-%H%M%S")
+        filename = sanitize_filename(output_date + "-" + str(x) + ".jpg")
+
+        path = f"{image_dir}/{filename}"
+
+        if filename in image_dir_contents:
+            image_dir_contents.remove(filename)
+
+        if skip_existing and os.path.exists(path):
+            print_success(f"image download skipped - id {x} already exists at '{path}'")
+            continue
+
+        downloader = ImageDownloaderWithExif(
+            images[x],
+            timezone="Europe/Berlin"
+        )
+
+        saved_image = downloader.download_and_save(path)
+        print(f"Saved {shorten_path(saved_image, 120)}")
 
 def main(args):
 
@@ -316,14 +364,17 @@ def main(args):
     if tour_selection == "all":
         for x in tours:
             make_gpx(x, api, output_dir, no_poi, skip_existing, tours[x], add_date, max_title_length, max_desc_length)
+            download_tour_images(x, api, output_dir, skip_existing, tours[x], add_date, max_title_length)
     else:
         if anonymous:
             make_gpx(tour_selection, api, output_dir, no_poi, False, None, add_date, max_title_length, max_desc_length)
         else:
             if int(tour_selection) in tours:
                 make_gpx(tour_selection, api, output_dir, no_poi, skip_existing, tours[int(tour_selection)], add_date, max_title_length, max_desc_length)
+                download_tour_images(tour_selection, api, output_dir, skip_existing, tours[int(tour_selection)], add_date, max_title_length)
             else:
                 make_gpx(tour_selection, api, output_dir, no_poi, skip_existing, None, add_date, max_title_length, max_desc_length)
+                download_tour_images(tour_selection, api, output_dir, skip_existing, None, add_date, max_title_length)
     print()
 
     if remove_deleted:

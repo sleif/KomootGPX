@@ -59,3 +59,10 @@ def sanitize_filename(value):
     for c in '\\/:*?"<>|':
         value = value.replace(c, '')
     return value
+
+def shorten_path(path: str, max_len: int = 60) -> str:
+    if len(path) <= max_len:
+        return path
+    # Keep start and end, replace middle with "..."
+    keep = (max_len - 3) // 2
+    return f"{path[:keep]}...{path[-keep:]}"

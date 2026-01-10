@@ -101,3 +101,24 @@ class KomootApi:
                                 self.__build_header(), critical=False)
 
         return r.json()
+
+    def fetch_tour_images(self, tour_id, silent=False):
+        if not silent:
+            print("Fetching images of tour '" + str(tour_id) + "'...")
+
+        results = {}
+        has_next_page = True
+        current_uri = "https://api.komoot.de/v007/tours/" + tour_id + "/cover_images/"
+        while has_next_page:
+            r = self.__send_request(current_uri, self.__build_header())
+
+            has_next_page = 'next' in r.json()['_links'] and 'href' in r.json()['_links']['next']
+            if has_next_page:
+                current_uri = r.json()['_links']['next']['href']
+
+            images = r.json()['_embedded']['items']
+            for image in images:
+                results[image['id']] = image
+
+        print("Found " + str(len(results)) + " images")
+        return results
