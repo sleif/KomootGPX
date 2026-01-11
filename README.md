@@ -84,6 +84,7 @@ komootgpx.py [options]
 
 [Generator]
         -o, --output=directory             Output directory (default: working directory)
+        -i, --no-image                     Do not download tour images
         -e, --no-poi                       Do not include highlights as POIs
         --max-desc-length=count            Limit description length in characters (default: -1 = no limit)
 

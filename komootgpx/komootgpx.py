@@ -46,6 +46,7 @@ def usage():
 
     print('\n' + bcolor.OKBLUE + '[Generator]' + bcolor.ENDC)
     print('\t{:<2s}, {:<30s} {:<10s}'.format('-o', '--output=directory', 'Output directory (default: working directory)'))
+    print('\t{:<2s}, {:<30s} {:<10s}'.format('-i', '--no-image', 'Do not download tour images'))
     print('\t{:<2s}, {:<30s} {:<10s}'.format('-e', '--no-poi', 'Do not include highlights as POIs'))
     print('\t{:<34s} {:<10s}'.format('--max-desc-length=count', 'Limit description length in characters (default: -1 = no limit)'))
 
@@ -277,6 +278,7 @@ def main(args):
 
     add_date = args.add_date
     output_dir = args.output
+    no_image = args.no_image
     no_poi = args.no_poi
 
     # Parse date ranges
@@ -364,17 +366,20 @@ def main(args):
     if tour_selection == "all":
         for x in tours:
             make_gpx(x, api, output_dir, no_poi, skip_existing, tours[x], add_date, max_title_length, max_desc_length)
-            download_tour_images(x, api, output_dir, skip_existing, tours[x], add_date, max_title_length)
+            if not no_image and not anonymous:
+                download_tour_images(x, api, output_dir, skip_existing, tours[x], add_date, max_title_length)
     else:
         if anonymous:
             make_gpx(tour_selection, api, output_dir, no_poi, False, None, add_date, max_title_length, max_desc_length)
         else:
             if int(tour_selection) in tours:
                 make_gpx(tour_selection, api, output_dir, no_poi, skip_existing, tours[int(tour_selection)], add_date, max_title_length, max_desc_length)
-                download_tour_images(tour_selection, api, output_dir, skip_existing, tours[int(tour_selection)], add_date, max_title_length)
+                if not no_image:
+                    download_tour_images(tour_selection, api, output_dir, skip_existing, tours[int(tour_selection)], add_date, max_title_length)
             else:
                 make_gpx(tour_selection, api, output_dir, no_poi, skip_existing, None, add_date, max_title_length, max_desc_length)
-                download_tour_images(tour_selection, api, output_dir, skip_existing, None, add_date, max_title_length)
+                if not no_image:
+                    download_tour_images(tour_selection, api, output_dir, skip_existing, None, add_date, max_title_length)
     print()
 
     if remove_deleted:
@@ -421,6 +426,7 @@ def parse_args():
     parser.add_argument("--private-only", action="store_true", help="Include only private tours")
     parser.add_argument("--public-only", action="store_true", help="Include only public tours")
     parser.add_argument("-o", "--output", type=str, default=os.getcwd(), help="Output directory")
+    parser.add_argument("-i", "--no-image", action="store_true", help="Do not download tour images")
     parser.add_argument("-e", "--no-poi", action="store_true", help="Do not include POIs in GPX")
     parser.add_argument("--debug", action="store_true", default=False, help="Debug")
     parser.add_argument("-h", "--help", action="store_true", help="Prints help")
