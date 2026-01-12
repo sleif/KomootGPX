@@ -12,6 +12,7 @@ class ImageDownloaderWithExif:
     def __init__(self, image_data: dict, timezone: str = "UTC"):
         self.image_data = image_data
         self.id = image_data["id"]
+        self.name = image_data["name"]
         self.src = image_data["src"]
         self.created_at = image_data["created_at"]
         self.location = image_data.get("location", {})
@@ -59,7 +60,9 @@ class ImageDownloaderWithExif:
         created_exif = self._format_created_at_local()
 
         exif_dict = {
-            "0th": {},
+            "0th": {
+                piexif.ImageIFD.ImageDescription: self.name.encode("utf-8"),
+            },
             "Exif": {
                 piexif.ExifIFD.DateTimeOriginal: created_exif,
                 piexif.ExifIFD.DateTimeDigitized: created_exif,

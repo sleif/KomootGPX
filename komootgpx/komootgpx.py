@@ -223,7 +223,7 @@ def download_tour_images(tour_id, api, output_dir, skip_existing, tour_base, add
 
         downloader = ImageDownloaderWithExif(
             images[x],
-            timezone="Europe/Berlin"
+            timezone="UTC"
         )
 
         saved_image = downloader.download_and_save(path)
