@@ -116,7 +116,7 @@ class KomootApi:
             if has_next_page:
                 current_uri = r.json()['_links']['next']['href']
 
-            images = r.json()['_embedded']['items']
+            images = r.json().get('_embedded', {}).get('items', [])
             for image in images:
                 results[image['id']] = image
 
