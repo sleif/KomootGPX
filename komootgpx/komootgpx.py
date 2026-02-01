@@ -46,9 +46,12 @@ def usage():
 
     print('\n' + bcolor.OKBLUE + '[Generator]' + bcolor.ENDC)
     print('\t{:<2s}, {:<30s} {:<10s}'.format('-o', '--output=directory', 'Output directory (default: working directory)'))
-    print('\t{:<2s}, {:<30s} {:<10s}'.format('-i', '--no-image', 'Do not download tour images'))
     print('\t{:<2s}, {:<30s} {:<10s}'.format('-e', '--no-poi', 'Do not include highlights as POIs'))
     print('\t{:<34s} {:<10s}'.format('--max-desc-length=count', 'Limit description length in characters (default: -1 = no limit)'))
+
+    print('\n' + bcolor.OKBLUE + '[Images]' + bcolor.ENDC)
+    print('\t{:<34s} {:<10s}'.format('--account-images-only', 'Only download images belong to this account'))
+    print('\t{:<2s}, {:<30s} {:<10s}'.format('-i', '--no-image', 'Do not download tour images'))
 
     print('\n' + bcolor.OKBLUE + '[Other]' + bcolor.ENDC)
     print('\t{:<34s} {:<10s}'.format('--debug', 'Save all Komoot API responses in set of .txt files'))
@@ -181,7 +184,7 @@ def make_gpx(tour_id, api, output_dir, no_poi, skip_existing, tour_base, add_dat
 
     print_success(f"GPX file written to '{path}'")
 
-def download_tour_images(tour_id, api, output_dir, skip_existing, tour_base, add_date, max_title_length):
+def download_tour_images(tour_id, api, output_dir, no_poi, skip_existing, tour_base, add_date, max_title_length, account_images_only):
     image_dir_contents = set()
     images = api.fetch_tour_images(str(tour_id), silent=False)
 
@@ -199,15 +202,28 @@ def download_tour_images(tour_id, api, output_dir, skip_existing, tour_base, add
         fullname = f"{date_str}{directoryname}_images"
         image_dir = f"{output_dir}/{fullname}"
 
+        if os.path.exists(image_dir):
         imagepat = re.compile(r"\.jpg$")
-        if not os.path.exists(image_dir):
-            os.makedirs(image_dir)
         for f in os.listdir(image_dir):
             if not os.path.isfile(f) or not imagepat.match(f):
                 next
             image_dir_contents.add(f)
 
     for x in images:
+        creator_display_name = images[x].get('_embedded', {}).get('creator', {}).get('display_name', "")
+        highlight_id = images[x].get('highlight_id', None)
+        id = images[x].get('id')
+        if highlight_id and no_poi:
+            print_success(f"Also skipped image download for highlight/poi: {highlight_id} (--no-poi)")
+            continue
+
+        if account_images_only and creator_display_name != api.display_name:
+            print_success(f"Image download skipped for image {id} from: {creator_display_name} - it doesn't belong to user {api.display_name}")
+            continue
+
+        if not os.path.exists(image_dir):
+            os.makedirs(image_dir)
+
         dt = datetime.strptime(images[x]['created_at'], "%Y-%m-%dT%H:%M:%S.%fZ")
         output_date = dt.strftime("%Y%m%d-%H%M%S")
         filename = sanitize_filename(output_date + "-" + str(x) + ".jpg")
@@ -223,11 +239,15 @@ def download_tour_images(tour_id, api, output_dir, skip_existing, tour_base, add
 
         downloader = ImageDownloaderWithExif(
             images[x],
+            api,
+            no_poi,
+            account_images_only,
             timezone="UTC"
         )
 
         saved_image = downloader.download_and_save(path)
-        print(f"Saved {shorten_path(saved_image, 120)}")
+        if saved_image:
+            print_success(f"Saved {shorten_path(saved_image, 120)}")
 
 def main(args):
 
@@ -278,8 +298,9 @@ def main(args):
 
     add_date = args.add_date
     output_dir = args.output
-    no_image = args.no_image
     no_poi = args.no_poi
+    no_image = args.no_image
+    account_images_only = args.account_images_only
 
     # Parse date ranges
     start_date = None
@@ -367,7 +388,7 @@ def main(args):
         for x in tours:
             make_gpx(x, api, output_dir, no_poi, skip_existing, tours[x], add_date, max_title_length, max_desc_length)
             if not no_image and not anonymous:
-                download_tour_images(x, api, output_dir, skip_existing, tours[x], add_date, max_title_length)
+                download_tour_images(x, api, output_dir, no_poi, skip_existing, tours[x], add_date, max_title_length, account_images_only)
     else:
         if anonymous:
             make_gpx(tour_selection, api, output_dir, no_poi, False, None, add_date, max_title_length, max_desc_length)
@@ -375,11 +396,11 @@ def main(args):
             if int(tour_selection) in tours:
                 make_gpx(tour_selection, api, output_dir, no_poi, skip_existing, tours[int(tour_selection)], add_date, max_title_length, max_desc_length)
                 if not no_image:
-                    download_tour_images(tour_selection, api, output_dir, skip_existing, tours[int(tour_selection)], add_date, max_title_length)
+                    download_tour_images(tour_selection, api, output_dir, no_poi, skip_existing, tours[int(tour_selection)], add_date, max_title_length, account_images_only)
             else:
                 make_gpx(tour_selection, api, output_dir, no_poi, skip_existing, None, add_date, max_title_length, max_desc_length)
                 if not no_image:
-                    download_tour_images(tour_selection, api, output_dir, skip_existing, None, add_date, max_title_length)
+                    download_tour_images(tour_selection, api, output_dir, no_poi, skip_existing, None, add_date, max_title_length, account_images_only)
     print()
 
     if remove_deleted:
@@ -427,6 +448,7 @@ def parse_args():
     parser.add_argument("--public-only", action="store_true", help="Include only public tours")
     parser.add_argument("-o", "--output", type=str, default=os.getcwd(), help="Output directory")
     parser.add_argument("-i", "--no-image", action="store_true", help="Do not download tour images")
+    parser.add_argument("--account-images-only", action="store_true", help="Only download images belong to this account")
     parser.add_argument("-e", "--no-poi", action="store_true", help="Do not include POIs in GPX")
     parser.add_argument("--debug", action="store_true", default=False, help="Debug")
     parser.add_argument("-h", "--help", action="store_true", help="Prints help")

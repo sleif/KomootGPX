@@ -6,62 +6,113 @@ import piexif
 import tempfile
 import shutil
 import os
-
+from io import BytesIO
+from PIL import Image
+from .utils import *
 
 class ImageDownloaderWithExif:
-    def __init__(self, image_data: dict, timezone: str = "UTC"):
-        self.image_data = image_data
+    def __init__(
+        self,
+        image_data: dict,
+        api,
+        no_poi,
+        account_images_only,
+        *,
+        title: str = "",
+        creator: str = "",
+        timezone: str = "UTC",
+        jpeg_quality: int = 90,
+    ):
+        self.api = api
+        self.no_poi = no_poi
+        self.account_images_only = account_images_only
         self.id = image_data["id"]
-        self.name = image_data["name"]
+        self.name = image_data.get('name', title)
         self.src = image_data["src"]
         self.created_at = image_data["created_at"]
         self.location = image_data.get("location", {})
+        self.creator_display_name = image_data.get('_embedded', {}).get('creator', {}).get('display_name', creator)
+        self.highlight_id = image_data.get('highlight_id', None)
         self.timezone = ZoneInfo(timezone)
+        self.jpeg_quality = jpeg_quality
 
     # ---------- public API ----------
 
     def download_and_save(self, output_path: str) -> str:
-        """
-        Download the image, merge EXIF, and save to the given output path.
-        Preserves original JPEG quality.
-        """
-        # Ensure output directory exists
-        os.makedirs(os.path.dirname(output_path), exist_ok=True)
+        image_bytes, is_png = self._download_image_bytes()
+        if self.highlight_id:
+            highlight = self.api.fetch_highlight(highlight_id=self.highlight_id, silent=True)
+            self.name = highlight.get('base_name', '')
+            self.creator_display_name = highlight.get('_embedded', {}).get('creator', {}).get('display_name', '')
 
-        # Download raw JPEG bytes
-        image_bytes = self._download_image_bytes()
+        if is_png:
+            image_bytes = self._png_to_jpeg(image_bytes)
 
-        # Build EXIF
         exif_bytes = self._build_exif()
 
-        # Use temporary file to insert EXIF
+        # piexif works on files only -> temp file
         with tempfile.NamedTemporaryFile(suffix=".jpg", delete=False) as tmp:
             tmp.write(image_bytes)
             tmp.flush()
             tmp_name = tmp.name
 
-        # Insert EXIF in-place
         piexif.insert(exif_bytes, tmp_name)
-
-        # Move temp file to final output
         shutil.move(tmp_name, output_path)
 
         return output_path
 
-    # ---------- internal helpers ----------
+    # ---------- downloading ----------
 
-    def _download_image_bytes(self) -> bytes:
+    def _download_image_bytes(self) -> tuple[bytes, bool]:
         url = self._strip_url_params(self.src)
         resp = requests.get(url, timeout=15)
         resp.raise_for_status()
-        return resp.content
+
+        content_type = resp.headers.get("Content-Type", "").lower()
+        is_png = "image/png" in content_type or url.lower().endswith(".png")
+
+        return resp.content, is_png
+
+    # ---------- PNG -> JPEG ----------
+
+    def _png_to_jpeg(self, png_bytes: bytes) -> bytes:
+        img = Image.open(BytesIO(png_bytes))
+
+        # Handle transparency correctly
+        if img.mode in ("RGBA", "LA"):
+            background = Image.new("RGB", img.size, (255, 255, 255))
+            background.paste(img, mask=img.split()[-1])
+            img = background
+        else:
+            img = img.convert("RGB")
+
+        out = BytesIO()
+        img.save(
+            out,
+            format="JPEG",
+            quality=self.jpeg_quality,
+            subsampling=0,
+            optimize=True,
+        )
+        return out.getvalue()
+
+    # ---------- EXIF ----------
 
     def _build_exif(self) -> bytes:
         created_exif = self._format_created_at_local()
 
         exif_dict = {
             "0th": {
-                piexif.ImageIFD.ImageDescription: self.name.encode("utf-8"),
+                **(
+                    {piexif.ImageIFD.ImageDescription: self.name.encode("utf-8")}
+                    if self.name
+                    else {}
+                ),
+                **(
+                    {piexif.ImageIFD.Artist: self.creator_display_name.encode("utf-8")}
+                    if self.creator_display_name
+                    else {}
+                ),
             },
             "Exif": {
                 piexif.ExifIFD.DateTimeOriginal: created_exif,
@@ -93,16 +144,14 @@ class ImageDownloaderWithExif:
     # ---------- time handling ----------
 
     def _format_created_at_local(self) -> str:
-        # Parse UTC
         dt_utc = datetime.strptime(
             self.created_at, "%Y-%m-%dT%H:%M:%S.%fZ"
         ).replace(tzinfo=ZoneInfo("UTC"))
-        # Convert to target timezone
+
         dt_local = dt_utc.astimezone(self.timezone)
-        # EXIF format (no timezone info)
         return dt_local.strftime("%Y:%m:%d %H:%M:%S")
 
-    # ---------- static helpers ----------
+    # ---------- helpers ----------
 
     @staticmethod
     def _strip_url_params(url: str) -> str:

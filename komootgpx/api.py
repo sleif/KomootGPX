@@ -122,3 +122,13 @@ class KomootApi:
 
         print("Found " + str(len(results)) + " images")
         return results
+
+    def fetch_highlight(self, highlight_id, silent=False):
+        if not silent:
+            print("Fetching highlight '" + str(highlight_id) + "'...")
+
+        results = {}
+        current_uri = "https://api.komoot.de/v007/highlights/" + str(highlight_id)
+        r = self.__send_request(current_uri, self.__build_header())
+
+        return r.json()
