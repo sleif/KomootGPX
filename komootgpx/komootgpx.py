@@ -225,9 +225,12 @@ def download_tour_images(tour_id, api, output_dir, no_poi, skip_existing, tour_b
         if not os.path.exists(image_dir):
             os.makedirs(image_dir)
 
+        third_party_copyright = ''
+        if creator_display_name != api.display_name:
+            third_party_copyright = '-3p'
         dt = datetime.strptime(images[x]['created_at'], "%Y-%m-%dT%H:%M:%S.%fZ")
         output_date = dt.strftime("%Y%m%d-%H%M%S")
-        filename = sanitize_filename(output_date + "-" + str(x) + ".jpg")
+        filename = sanitize_filename(output_date + "-hl" + str(x) + third_party_copyright + ".jpg")
 
         path = f"{image_dir}/{filename}"
 
