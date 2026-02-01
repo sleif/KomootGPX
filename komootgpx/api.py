@@ -82,12 +82,12 @@ class KomootApi:
         print("Found " + str(len(results)) + " tours")
         return results
 
-    def fetch_tour(self, tour_id):
+    def fetch_tour(self, tour_id, hl_lang='en'):
         print("Fetching tour '" + tour_id + "'...")
 
         r = self.__send_request("https://api.komoot.de/v007/tours/" + tour_id + "?_embedded=coordinates,way_types,"
                                                                                 "surfaces,directions,participants,"
-                                                                                "timeline&directions=v2&fields"
+                                                                                "timeline&hl=" + hl_lang + "&directions=v2&fields"
                                                                                 "=timeline&format=coordinate_array"
                                                                                 "&timeline_highlights_fields=tips,"
                                                                                 "recommenders",
