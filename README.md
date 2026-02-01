@@ -90,7 +90,7 @@ komootgpx.py [options]
 
 [Images]
         --account-images-only              Only download images belong to this account
-        -i, --no-image                     Do not download tour images
+        -i, --add-images                   Add tour images
 
 [Other]
         --debug                            Save all Komoot API responses in set of .txt files

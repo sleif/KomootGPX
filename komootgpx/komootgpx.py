@@ -52,7 +52,7 @@ def usage():
 
     print('\n' + bcolor.OKBLUE + '[Images]' + bcolor.ENDC)
     print('\t{:<34s} {:<10s}'.format('--account-images-only', 'Only download images belong to this account'))
-    print('\t{:<2s}, {:<30s} {:<10s}'.format('-i', '--no-image', 'Do not download tour images'))
+    print('\t{:<2s}, {:<30s} {:<10s}'.format('-i', '--add-images', 'Add tour images'))
 
     print('\n' + bcolor.OKBLUE + '[Other]' + bcolor.ENDC)
     print('\t{:<34s} {:<10s}'.format('--debug', 'Save all Komoot API responses in set of .txt files'))
@@ -300,7 +300,7 @@ def main(args):
     add_date = args.add_date
     output_dir = args.output
     no_poi = args.no_poi
-    no_image = args.no_image
+    add_images = args.add_images
     language = args.language
     account_images_only = args.account_images_only
 
@@ -389,7 +389,7 @@ def main(args):
     if tour_selection == "all":
         for x in tours:
             make_gpx(x, api, output_dir, no_poi, skip_existing, tours[x], add_date, max_title_length, max_desc_length, language)
-            if not no_image and not anonymous:
+            if add_images and not anonymous:
                 download_tour_images(x, api, output_dir, no_poi, skip_existing, tours[x], add_date, max_title_length, account_images_only)
     else:
         if anonymous:
@@ -397,11 +397,11 @@ def main(args):
         else:
             if int(tour_selection) in tours:
                 make_gpx(tour_selection, api, output_dir, no_poi, skip_existing, tours[int(tour_selection)], add_date, max_title_length, max_desc_length, language)
-                if not no_image:
+                if add_images:
                     download_tour_images(tour_selection, api, output_dir, no_poi, skip_existing, tours[int(tour_selection)], add_date, max_title_length, account_images_only)
             else:
                 make_gpx(tour_selection, api, output_dir, no_poi, skip_existing, None, add_date, max_title_length, max_desc_length, language)
-                if not no_image:
+                if add_images:
                     download_tour_images(tour_selection, api, output_dir, no_poi, skip_existing, None, add_date, max_title_length, account_images_only)
     print()
 
@@ -450,7 +450,7 @@ def parse_args():
     parser.add_argument("--private-only", action="store_true", help="Include only private tours")
     parser.add_argument("--public-only", action="store_true", help="Include only public tours")
     parser.add_argument("-o", "--output", type=str, default=os.getcwd(), help="Output directory")
-    parser.add_argument("-i", "--no-image", action="store_true", help="Do not download tour images")
+    parser.add_argument("-i", "--add-images", action="store_true", default=False, help="Add tour images")
     parser.add_argument("--account-images-only", action="store_true", help="Only download images belong to this account")
     parser.add_argument("-e", "--no-poi", action="store_true", help="Do not include POIs in GPX")
     parser.add_argument("--debug", action="store_true", default=False, help="Debug")
