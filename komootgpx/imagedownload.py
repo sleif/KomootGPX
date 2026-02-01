@@ -16,7 +16,7 @@ class ImageDownloaderWithExif:
         image_data: dict,
         api,
         no_poi,
-        account_images_only,
+        all_images,
         *,
         title: str = "",
         creator: str = "",
@@ -25,7 +25,7 @@ class ImageDownloaderWithExif:
     ):
         self.api = api
         self.no_poi = no_poi
-        self.account_images_only = account_images_only
+        self.all_images = all_images
         self.id = image_data["id"]
         self.name = image_data.get('name', title)
         self.src = image_data["src"]

@@ -89,8 +89,8 @@ komootgpx.py [options]
         --max-desc-length=count            Limit description length in characters (default: -1 = no limit)
 
 [Images]
-        --account-images-only              Only download images belong to this account
         -i, --add-images                   Add tour images
+        --all-images                       Download images from other users too - copyright review is required
 
 [Other]
         --debug                            Save all Komoot API responses in set of .txt files
