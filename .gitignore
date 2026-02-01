@@ -121,6 +121,7 @@ dmypy.json
 
 # Cython debug symbols
 cython_debug/
+
+# misc settings and meta files
 .DS_Store
-credentials.json
 .vscode/settings.json
