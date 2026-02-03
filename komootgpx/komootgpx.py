@@ -34,7 +34,7 @@ def usage():
     print('\t{:<2s}, {:<30s} {:<10s}'.format('-r', '--remove-deleted', 'Remove GPX files (from --output dir) without corresponding tour in Komoot (deleted and previous versions)'))
     print('\t{:<2s}, {:<30s} {:<10s}'.format('-I', '--id-filename', 'Use only tour id for filename (no title)'))
     print('\t{:<2s}, {:<30s} {:<10s}'.format('-D', '--add-date', 'Add tour date to file name'))
-    print('\t{:<2s}, {:<30s} {:<10s}'.format('-L', '--language', 'Select description language, default=en'))
+    print('\t{:<2s}, {:<30s} {:<10s}'.format('-L', '--language', 'Select description language (fr, de, en..., default: en)'))
     print('\t{:<34s} {:<10s}'.format('--max-title-length=num', 'Crop title used in filename to given length (default: -1 = no limit)'))
 
     print('\n' + bcolor.OKBLUE + '[Filters]' + bcolor.ENDC)
