@@ -435,7 +435,7 @@ def parse_args():
     parser.add_argument("-p", "--pass", dest="pwd", type=str, help="Password for login")
     parser.add_argument("-n", "--anonymous", action="store_true", default=False, help="Login anonymously")
     parser.add_argument("-l", "--list-tours", action="store_true", help="Print available tours")
-    parser.add_argument("-L", "--language", type=str, help="Select description language (default=en)")
+    parser.add_argument("-L", "--language", type=str, default="en", help="Select description language (default=en)")
     parser.add_argument("-d", "--make-gpx", type=int, help="Download GPX for selected tour")
     parser.add_argument("-a", "--make-all", action="store_true", help="Download all tours")
     parser.add_argument("-s", "--skip-existing", action="store_true", help="Skip already downloaded tours")
