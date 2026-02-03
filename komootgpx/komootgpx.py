@@ -397,6 +397,8 @@ def main(args):
     else:
         if anonymous:
             make_gpx(tour_selection, api, output_dir, no_poi, False, None, add_date, max_title_length, max_desc_length, language)
+            if add_images:
+                print_warning(f"Warning: No image download in anonymous mode.")
         else:
             if int(tour_selection) in tours:
                 make_gpx(tour_selection, api, output_dir, no_poi, skip_existing, tours[int(tour_selection)], add_date, max_title_length, max_desc_length, language)
