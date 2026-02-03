@@ -73,7 +73,7 @@ komootgpx.py [options]
         -I, --id-filename                  Use only tour id for filename (no title)
         -D, --add-date                     Add tour date to file name
         --max-title-length=num             Crop title used in filename to given length (default: -1 = no limit)
-        -L, --language                     Set tour description to specific language (fr, de, en..., default: en )
+        -L, --language                     Set tour description to specific language (fr, de, en..., default: en)
 
 [Filters]
         -t, --tour-type=type               Filter by track type ("planned", "recorded" or "all")
