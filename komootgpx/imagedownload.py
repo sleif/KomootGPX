@@ -5,7 +5,6 @@ from zoneinfo import ZoneInfo
 import piexif
 import tempfile
 import shutil
-import os
 from io import BytesIO
 from PIL import Image
 from .utils import *

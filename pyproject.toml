@@ -10,16 +10,17 @@ name = "komootgpx"
 dynamic = ["version"]
 description = "Download Komoot tracks and highlights as GPX files (including metadata). Supports bulk-download."
 readme = {file = "README.md", content-type = "text/markdown"}
-requires-python = ">=3.6.0"
+requires-python = ">=3.9"
 license = "GPL-3.0-only"
 authors = [
   {name = "Tim Schneeberger", email = "tim.schneeberger@outlook.de"}
 ]
 dependencies = [
-  "argparse",
   "certifi",
   "chardet",
+  "piexif",
   "gpxpy",
+  "pillow",
   "colorama",
   "idna",
   "requests",
